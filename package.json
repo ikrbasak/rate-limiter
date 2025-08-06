@@ -1,7 +1,7 @@
 {
   "name": "@ikrbasak/rate-limiter",
   "private": false,
-  "version": "0.0.5",
+  "version": "0.1.0",
   "description": "Lightweight, pluggable, and production-ready rate limiter for Node.js. Supports fine-grained control over rate limiting strategies (fixed window, sliding window, token bucket).",
   "keywords": [
     "rate-limiter",

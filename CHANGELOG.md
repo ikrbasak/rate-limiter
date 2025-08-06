@@ -1,5 +1,11 @@
 # @ikrbasak/rate-limiter
 
+## 0.1.0
+
+### Minor Changes
+
+- bc547c9: This marks the package to be suitable to be tested on small projects and perform analytics.
+
 ## 0.0.5
 
 ### Patch Changes

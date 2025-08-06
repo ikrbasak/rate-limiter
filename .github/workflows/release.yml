@@ -107,15 +107,6 @@ jobs:
           echo "//registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN" >> ~/.npmrc
           npm publish --provenance --access public --tag "${{ steps.release.outputs.npm_tag }}"
 
-      - name: Publish to GitHub
-        if: steps.bundle.outputs.publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "@ikrbasak:registry=https://npm.pkg.github.com/" >> ~/.npmrc
-          echo "//npm.pkg.github.com/:_authToken=$NODE_AUTH_TOKEN" >> ~/.npmrc
-          npm publish --access public --tag "${{ steps.release.outputs.npm_tag }}"
-
       - name: Create version bump PR
         if: steps.release.outputs.current_package_version != steps.release.outputs.next_package_version
         env:

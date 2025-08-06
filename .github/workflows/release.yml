@@ -123,7 +123,8 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -B "$pr_branch"
 
-          npm run prettier:fix || true
+          npm run prettier:fix
+          npm run eslint:fix
 
           git add .
           git commit -m "chore(release): bump to v${{ steps.release.outputs.next_package_version }}"

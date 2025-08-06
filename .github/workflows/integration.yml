@@ -117,6 +117,9 @@ jobs:
       - name: Check formatting
         run: npm run prettier:check
 
+      - name: Check lint
+        run: npm run eslint:check
+
   vcs-quality:
     name: Check VCS quality
     runs-on: ubuntu-latest
@@ -147,7 +150,9 @@ jobs:
           safe_regex="^(feat|((hot|bug)fix)|wip|exp|release|docs|infra|misc)/[\\da-z-/]+$"
           unsafe_regex="^(main|develop|(staging|release)([/-].*))$"
 
-          npx validate-branch-name -r $safe_regex || npx validate-branch-name -r $unsafe_regex
+          branch_name=${{ github.head_ref || github.ref_name }}
+          npx validate-branch-name -r $safe_regex -t $branch_name || \
+            npx validate-branch-name -r $unsafe_regex -t $branch_name
 
       - name: Validate current commit (last commit) with commitlint
         if: github.event_name != 'pull_request'

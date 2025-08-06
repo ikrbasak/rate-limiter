@@ -14,10 +14,21 @@ permissions:
   id-token: write
   pull-requests: write
 
+env:
+  REDIS_URL: redis://localhost:6379/0
+  NODE_ENV: test
+  CI: true
+
 jobs:
   publish:
-    name: Prepare and/or Publish to NPM
+    name: Prepare and/or publish to NPM
     runs-on: ubuntu-latest
+
+    services:
+      redis:
+        image: redis:8.0.3-alpine3.21
+        ports:
+          - 6379:6379
 
     steps:
       - name: Checkout code
@@ -31,9 +42,33 @@ jobs:
           node-version-file: '.nvmrc'
 
       - name: Install dependencies
-        run: |
-          npm ci
-          npm i express hono ioredis
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test:coverage || exit 0
+
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v5
+        with:
+          fail_ci_if_error: true
+          verbose: true
+          disable_search: true
+          files: coverage/cobertura-coverage.xml
+          override_commit: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          flags: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload test results
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          fail_ci_if_error: true
+          verbose: true
+          disable_search: true
+          files: junit.xml
+          override_commit: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          flags: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Prepare release logic
         id: release
@@ -95,6 +130,7 @@ jobs:
             exit 0
           fi
 
+          npm run typecheck
           npm run bundle
           echo "publish=true" >> $GITHUB_OUTPUT
 

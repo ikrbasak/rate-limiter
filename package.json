@@ -23,18 +23,19 @@
   "license": "MIT",
   "author": "Krishna Basak <ikrbasak@gmail.com>",
   "type": "commonjs",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "typecheck": "tsc",
-    "bundle": "tsup",
+    "bundle": "tsdown",
     "test": "tsx node_modules/vitest/vitest.mjs run --cache=false",
     "test:coverage": "tsx node_modules/vitest/vitest.mjs run --coverage --cache=false",
     "prettier:fix": "prettier -w .",
     "prettier:check": "prettier -c .",
     "eslint:check": "eslint src tests",
     "eslint:fix": "eslint src tests --fix",
+    "change:add": "changeset add",
     "prepare": "husky || true"
   },
   "engines": {
@@ -55,16 +56,20 @@
     "@vitest/coverage-v8": "^3.2.4",
     "commitizen": "^4.3.1",
     "cz-conventional-changelog": "^3.3.0",
+    "dotenv": "^17.2.1",
     "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.3",
+    "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "eslint-plugin-unicorn": "^60.0.0",
+    "express": "^5.1.0",
     "globals": "^16.3.0",
+    "hono": "^4.8.12",
     "husky": "^9.1.7",
+    "ioredis": "^5.7.0",
     "lint-staged": "^16.1.4",
     "prettier": "^3.6.2",
-    "tsup": "^8.5.0",
+    "tsdown": "^0.13.3",
     "tsx": "^4.20.3",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.39.0",
@@ -98,5 +103,12 @@
     "*.ts": [
       "eslint"
     ]
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
   }
 }

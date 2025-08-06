@@ -41,5 +41,6 @@ export default defineConfig({
     testTimeout: 10_000,
     verbose: true,
     watch: false,
+    setupFiles: ['tests/vitest.config.ts'],
   },
 });

@@ -9,7 +9,7 @@ on:
       - release-*
       - beta
     paths:
-      - '.changeset/'
+      - '.changeset/**'
 
 permissions:
   contents: write

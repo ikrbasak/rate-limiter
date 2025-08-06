@@ -39,7 +39,7 @@ export default defineConfig({
     passWithNoTests: false,
     reporters: ['default', 'junit', 'json'],
     testTimeout: 10_000,
-    verbose: true,
+    verbose: false,
     watch: false,
     setupFiles: ['tests/vitest.config.ts'],
   },

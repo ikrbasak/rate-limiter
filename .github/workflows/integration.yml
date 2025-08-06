@@ -147,7 +147,7 @@ jobs:
 
       - name: Check branch name
         run: |
-          safe_regex="^(feat|((hot|bug)fix)|wip|exp|release|docs|infra|misc)/[\\da-z-/]+$"
+          safe_regex="^(feat|((hot|bug)fix)|wip|exp|release|docs|infra|misc)/[\\da-z-/.]+$"
           unsafe_regex="^(main|develop|(staging|release)([/-].*))$"
 
           branch_name=${{ github.head_ref || github.ref_name }}

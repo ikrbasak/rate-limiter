@@ -144,5 +144,5 @@ junit.xml
 report.json
 
 # Codecov Reports
-codecov.*
+codecov*
 !codecov.yml

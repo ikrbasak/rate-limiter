@@ -7,6 +7,7 @@ on:
       - main
       - release/*
       - release-*
+      - beta
   workflow_dispatch:
 
 env:
@@ -143,7 +144,7 @@ jobs:
 
       - name: Check branch name
         run: |
-          safe_regex="^(feat|((hot|bug)fix)|wip|exp|release|docs|infra|misc)/[\\da-z-]+$"
+          safe_regex="^(feat|((hot|bug)fix)|wip|exp|release|docs|infra|misc)/[\\da-z-/]+$"
           unsafe_regex="^(main|develop|(staging|release)([/-].*))$"
 
           npx validate-branch-name -r $safe_regex || npx validate-branch-name -r $unsafe_regex

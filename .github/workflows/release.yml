@@ -1,0 +1,134 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - release/*
+      - release-*
+      - beta
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
+jobs:
+  publish:
+    name: Prepare and/or Publish to NPM
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          registry-url: https://registry.npmjs.org/
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare release logic
+        id: release
+        run: |
+          set -e
+
+          package_name=$(jq -r '.name' package.json)
+          current_package_version=$(jq -r '.version' package.json)
+          current_git_branch="${{ github.ref_name }}"
+
+          echo "Package: $package_name"
+          echo "Current version: $current_package_version"
+          echo "Current branch: $current_git_branch"
+
+          # Determine npm tag based on branch
+          if [[ "$current_git_branch" == "main" ]]; then
+            npm_tag="latest"
+          elif [[ "$current_git_branch" == "beta" ]]; then
+            npm_tag="beta"
+          elif [[ "$current_git_branch" == release/* || "$current_git_branch" == release-* ]]; then
+            npm_tag="rc"
+          else
+            echo "Not a publishable branch: $current_git_branch"
+            exit 1
+          fi
+
+          echo "Using npm tag: $npm_tag"
+
+          # Enter pre mode for non-main branches
+          if [[ "$current_git_branch" != "main" ]]; then
+            npx changeset pre enter "$npm_tag" || true
+          else
+            npx changeset pre exit || true
+          fi
+
+          # Apply version updates
+          npx changeset version
+          next_package_version=$(jq -r '.version' package.json)
+
+          echo "next_package_version=$next_package_version" >> $GITHUB_OUTPUT
+          echo "package_name=$package_name" >> $GITHUB_OUTPUT
+          echo "npm_tag=$npm_tag" >> $GITHUB_OUTPUT
+          echo "current_package_version=$current_package_version" >> $GITHUB_OUTPUT
+          echo "current_git_branch=$current_git_branch" >> $GITHUB_OUTPUT
+
+      - name: Check and publish if version doesn't exist
+        if: steps.release.outputs.current_package_version == steps.release.outputs.next_package_version
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -e
+
+          pkg=${{ steps.release.outputs.package_name }}
+          ver=${{ steps.release.outputs.next_package_version }}
+
+          echo "Checking if $pkg@$ver exists on NPM..."
+          if npm view "$pkg@$ver" > /dev/null 2>&1; then
+            echo "Version already exists, skipping publish."
+            exit 0
+          fi
+
+          echo "Publishing new version $ver to NPM..."
+
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+          npm publish --provenance --access public --tag ${{ steps.release.outputs.npm_tag }}
+
+      - name: Create version bump PR
+        if: steps.release.outputs.current_package_version != steps.release.outputs.next_package_version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+
+          pr_branch="release/bump-${{ steps.release.outputs.next_package_version }}"
+          base_branch="${{ steps.release.outputs.current_git_branch }}"
+
+          echo "Creating PR from $pr_branch to $base_branch..."
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$pr_branch"
+
+          npm run prettier:fix || true
+
+          git add .
+          git commit -m "chore(release): bump to v${{ steps.release.outputs.next_package_version }}"
+          git push --force --set-upstream origin "$pr_branch"
+
+          # Check if PR already exists
+          if gh pr list --head "$pr_branch" --base "$base_branch" --state open --limit 1 | grep -q .; then
+            echo "PR already exists. Skipping creation."
+            exit 0
+          fi
+
+          gh pr create \
+            --title "chore(release): v${{ steps.release.outputs.next_package_version }}" \
+            --body "Auto-generated PR to bump version from v${{ steps.release.outputs.current_package_version }} to v${{ steps.release.outputs.next_package_version }}" \
+            --base "$base_branch" \
+            --head "$pr_branch"

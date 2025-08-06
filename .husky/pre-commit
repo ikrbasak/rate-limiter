@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-safe_regex="^(feat|((hot|bug)fix)|wip|exp|release|docs|infra|misc)/[\\da-z-]+$"
+safe_regex="^(feat|((hot|bug)fix)|wip|exp|release|docs|infra|misc)/[\\da-z-/]+$"
 unsafe_regex="^(main|develop|(staging|release)([/-].*))$"
 npx validate-branch-name -r $safe_regex
 

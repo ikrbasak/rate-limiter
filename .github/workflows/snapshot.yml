@@ -5,8 +5,7 @@ on:
 
 permissions:
   contents: read
-  id-token: read
-  pull-requests: read
+  id-token: write
 
 env:
   REDIS_URL: redis://localhost:6379/0
@@ -48,8 +47,8 @@ jobs:
           verbose: true
           disable_search: true
           files: coverage/cobertura-coverage.xml
-          override_commit: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
-          flags: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          override_commit: ${{ github.sha }}
+          flags: ${{ github.sha }}
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload test results
@@ -60,8 +59,8 @@ jobs:
           verbose: true
           disable_search: true
           files: junit.xml
-          override_commit: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
-          flags: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          override_commit: ${{ github.sha }}
+          flags: ${{ github.sha }}
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Generate snapshot version

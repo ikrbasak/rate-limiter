@@ -35,6 +35,7 @@
     "prettier:check": "prettier -c .",
     "eslint:check": "eslint src tests",
     "eslint:fix": "eslint src tests --fix",
+    "change:add": "changeset add",
     "prepare": "husky || true"
   },
   "engines": {

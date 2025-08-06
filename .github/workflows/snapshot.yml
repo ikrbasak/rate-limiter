@@ -1,0 +1,42 @@
+name: Snapshot release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: read
+  pull-requests: read
+
+jobs:
+  publish:
+    name: Prepare and publish to NPM
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate snapshot version
+        run: npx changeset version --snapshot
+
+      - name: Bundle the package
+        run: npm run typecheck && npm run bundle
+
+      - name: Publish snapshot package
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "@ikrbasak:registry=https://registry.npmjs.org/" >> ~/.npmrc
+          echo "//registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN" >> ~/.npmrc
+          npm publish --provenance --access public --tag snapshot

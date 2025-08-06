@@ -1,5 +1,11 @@
 # @ikrbasak/rate-limiter
 
+## 0.0.5
+
+### Patch Changes
+
+- e339b16: add types documentation for the core library
+
 ## 0.0.4
 
 ### Patch Changes

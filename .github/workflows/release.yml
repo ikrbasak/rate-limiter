@@ -97,6 +97,7 @@ jobs:
           echo "Publishing new version $ver to NPM..."
 
           echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+          npm run bundle
           npm publish --provenance --access public --tag ${{ steps.release.outputs.npm_tag }}
 
       - name: Create version bump PR

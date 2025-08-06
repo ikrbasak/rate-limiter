@@ -116,7 +116,6 @@ const config = tseslint.config(
       'unicorn/no-useless-switch-case': ['error'],
       'unicorn/no-useless-undefined': ['error'],
       'unicorn/prefer-array-find': ['error'],
-      '@typescript-eslint/no-magic-numbers': 'error',
       'unicorn/prefer-array-index-of': ['error'],
       'unicorn/prefer-array-some': ['error'],
       'unicorn/prefer-at': ['error'],

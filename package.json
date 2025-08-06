@@ -33,8 +33,8 @@
     "test:coverage": "tsx node_modules/vitest/vitest.mjs run --coverage --cache=false",
     "prettier:fix": "prettier -w .",
     "prettier:check": "prettier -c .",
-    "eslint:check": "eslint",
-    "eslint:fix": "eslint --fix",
+    "eslint:check": "eslint src tests",
+    "eslint:fix": "eslint src tests --fix",
     "prepare": "husky || true"
   },
   "engines": {

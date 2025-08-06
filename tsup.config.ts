@@ -1,4 +1,3 @@
-// tsup.config.ts
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
@@ -7,7 +6,7 @@ export default defineConfig({
   format: ['cjs', 'esm'],
   bundle: true,
   clean: true,
-  sourcemap: false,
+  sourcemap: true,
   dts: true,
   minify: true,
   minifyIdentifiers: true,

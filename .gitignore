@@ -142,3 +142,7 @@ vite.config.ts.timestamp-*
 coverage/
 junit.xml
 report.json
+
+# Codecov Reports
+codecov.*
+!codecov.yml

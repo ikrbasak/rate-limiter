@@ -64,7 +64,11 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Generate snapshot version
-        run: npx changeset version --snapshot
+        run: |
+          sha=${{ github.sha }}
+          short_sha=$(echo $sha | cut -c1-7)
+          timestamp=$(date +%s)
+          npm version "0.0.0-$short_sha-$timestamp" --no-git-tag-version
 
       - name: Bundle the package
         run: npm run typecheck && npm run bundle

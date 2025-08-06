@@ -15,7 +15,7 @@
     },
     "sourceMap": true,
     "inlineSourceMap": false,
-    "removeComments": true,
+    "removeComments": false,
     "noEmit": true,
     "noEmitOnError": true,
     "allowSyntheticDefaultImports": true,

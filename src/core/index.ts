@@ -1,17 +1,35 @@
 import Redis from 'ioredis';
 
-import {
-  FixedWindowRateLimiterOptions,
-  RateLimiterConfig,
-  RateLimiterEvaluationResult,
-  RateLimiterOptions,
-  SlidingWindowRateLimiterOptions,
-  TokenBucketRateLimiterOptions,
-} from '@/shared/types';
+export type RateLimiterKey = string | (() => string);
+export type CommonRateLimiterOptions = { key: RateLimiterKey; window: number };
+export type FixedWindowRateLimiterOptions = CommonRateLimiterOptions & {
+  algo: 'fixed_window';
+  max: number;
+};
+export type SlidingWindowRateLimiterOptions = CommonRateLimiterOptions & {
+  algo: 'sliding_window';
+  max: number;
+};
+export type TokenBucketRateLimiterOptions = CommonRateLimiterOptions & {
+  algo: 'token_bucket';
+  capacity: number;
+  refill: number;
+};
+export type RateLimiterOptions =
+  | FixedWindowRateLimiterOptions
+  | SlidingWindowRateLimiterOptions
+  | TokenBucketRateLimiterOptions;
+export type RateLimiterConfig = { prefix?: string };
+export type RateLimiterEvaluationResult = {
+  limit: number;
+  allowed: boolean;
+  remaining: number;
+  retryAfter: number;
+};
 
 class RateLimiter {
   connection: Redis;
-  prefix = 'rl:';
+  prefix = 'rl';
 
   constructor(connection: Redis, config?: RateLimiterConfig) {
     this.connection = connection;
@@ -19,14 +37,19 @@ class RateLimiter {
   }
 
   create(options: RateLimiterOptions) {
-    return { evaluate: () => this.evaluate(options) };
+    const redisKey = this.generateKey(options.algo, options.key);
+    return { evaluate: () => this.evaluate(options), redisKey };
+  }
+
+  private generateKey<TAlgo extends string>(algo: TAlgo, key: RateLimiterKey) {
+    return `${this.prefix}:${algo}:${typeof key === 'string' ? key : key()}`;
   }
 
   private evaluate(
     options: RateLimiterOptions
   ): Promise<RateLimiterEvaluationResult> {
     const { algo, key } = options;
-    const redisKey = `${this.prefix}:${algo}:${typeof key === 'string' ? key : key()}`;
+    const redisKey = this.generateKey(algo, key);
 
     switch (algo) {
       case 'token_bucket': {

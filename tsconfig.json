@@ -34,6 +34,6 @@
     "noUncheckedIndexedAccess": true,
     "skipLibCheck": true
   },
-  "include": ["src/", "tests/", "tsup.config.ts"],
+  "include": ["src/", "tests/", "*.ts"],
   "exclude": ["node_modules/", "dist/"]
 }

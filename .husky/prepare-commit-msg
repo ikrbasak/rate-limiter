@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+
+if [ "$CI" = "true" ]; then
+  exit 0
+fi
+
+exec < /dev/tty && node_modules/.bin/cz --hook || true

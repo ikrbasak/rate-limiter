@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "gxl.git-graph-3",
+    "biomejs.biome",
+    "oxc.oxc-vscode",
+    "redis.redis-for-vscode",
+    "ms-azure-devops.azure-pipelines",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode"
+  ]
+}

@@ -9,6 +9,9 @@
     "fixed-window",
     "sliding-window"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "homepage": "https://github.com/ikrbasak/rate-limiter#readme",
   "bugs": {
     "url": "https://github.com/ikrbasak/rate-limiter/issues"

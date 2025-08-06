@@ -80,6 +80,7 @@ const limiter = rateLimiter.create({
 - Basic request throttling
 
 **Pros:** Simple, memory efficient
+
 **Cons:** Potential burst at window boundaries
 
 ### 2. Sliding Window
@@ -102,6 +103,7 @@ const limiter = rateLimiter.create({
 - Fair usage enforcement
 
 **Pros:** Accurate, smooth rate limiting
+
 **Cons:** Higher memory usage
 
 ### 3. Token Bucket
@@ -125,6 +127,7 @@ const limiter = rateLimiter.create({
 - Flexible rate limiting
 
 **Pros:** Allows bursts, flexible
+
 **Cons:** More complex to understand
 
 ## Configuration Options

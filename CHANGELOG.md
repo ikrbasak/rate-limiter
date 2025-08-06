@@ -1,5 +1,11 @@
 # @ikrbasak/rate-limiter
 
+## 0.1.1
+
+### Patch Changes
+
+- b98fa19: Update the documentation.
+
 ## 0.1.0
 
 ### Minor Changes

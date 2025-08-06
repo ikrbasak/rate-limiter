@@ -8,6 +8,8 @@ on:
       - release/*
       - release-*
       - beta
+    paths:
+      - '.changeset/'
 
 permissions:
   contents: write

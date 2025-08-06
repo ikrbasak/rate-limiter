@@ -15,6 +15,11 @@ env:
   NODE_ENV: test
   CI: true
 
+permissions:
+  contents: write
+  id-token: write
+  pull-requests: write
+
 concurrency:
   group: ${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || format('run-{0}', github.run_id) }}
   cancel-in-progress: true

@@ -1,5 +1,11 @@
 # @ikrbasak/rate-limiter
 
+## 0.2.0
+
+### Minor Changes
+
+- 8b9ab50: Add ability to generate key and limit (a)synchronously.
+
 ## 0.1.2
 
 ### Patch Changes

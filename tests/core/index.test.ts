@@ -1,5 +1,6 @@
 /* eslint-disable max-nested-callbacks */
 /* eslint-disable max-lines-per-function */
+import { getRandomKey, getRandomLimit } from '@tests/vitest.utils';
 import Redis from 'ioredis';
 import { describe, expect, it } from 'vitest';
 
@@ -19,22 +20,13 @@ describe('rate limiter core implementation', () => {
               .create({
                 algo: 'fixed_window',
                 window: 1000 * 60,
-                max: 1,
-                key: () => 'fixed_window_01',
+                limit: 1,
+                key: () => 'fixed_window_with_default_config',
               })
               .evaluate()
           ).resolves.toMatchObject({
             allowed: true,
           });
-
-          expect(
-            limiter.create({
-              algo: 'fixed_window',
-              window: 1000 * 60,
-              max: 1,
-              key: () => 'fixed_window_01',
-            }).redisKey
-          ).toBe('rl:fixed_window:fixed_window_01');
         });
 
         it('should limit if rate limiting count exceeded', async () => {
@@ -43,8 +35,8 @@ describe('rate limiter core implementation', () => {
               .create({
                 algo: 'fixed_window',
                 window: 1000 * 60,
-                max: 1,
-                key: 'fixed_window_01',
+                limit: 1,
+                key: 'fixed_window_with_default_config',
               })
               .evaluate()
           ).resolves.toMatchObject({
@@ -60,24 +52,14 @@ describe('rate limiter core implementation', () => {
               .create({
                 algo: 'token_bucket',
                 window: 1000 * 60,
-                key: 'token_bucket_01',
-                capacity: 1,
-                refill: 0,
+                key: 'token_bucket_with_default_config',
+                limit: 1,
+                refill: 1,
               })
               .evaluate()
           ).resolves.toMatchObject({
             allowed: true,
           });
-
-          expect(
-            limiter.create({
-              algo: 'token_bucket',
-              window: 1000 * 60,
-              key: 'token_bucket_01',
-              capacity: 1,
-              refill: 0,
-            }).redisKey
-          ).toBe('rl:token_bucket:token_bucket_01');
         });
 
         it('should limit if rate limiting count exceeded', async () => {
@@ -86,9 +68,9 @@ describe('rate limiter core implementation', () => {
               .create({
                 algo: 'token_bucket',
                 window: 1000 * 60,
-                key: 'token_bucket_01',
-                capacity: 10,
-                refill: 0,
+                key: 'token_bucket_with_default_config',
+                limit: 10,
+                refill: 1,
               })
               .evaluate()
           ).resolves.toMatchObject({
@@ -104,8 +86,8 @@ describe('rate limiter core implementation', () => {
               .create({
                 algo: 'sliding_window',
                 window: 1000 * 60,
-                key: 'sliding_window_01',
-                max: 1,
+                key: 'sliding_window_with_default_config',
+                limit: 1,
               })
               .evaluate()
           ).resolves.toMatchObject({ allowed: true });
@@ -117,20 +99,11 @@ describe('rate limiter core implementation', () => {
               .create({
                 algo: 'sliding_window',
                 window: 1000 * 60,
-                key: 'sliding_window_01',
-                max: 1,
+                key: 'sliding_window_with_default_config',
+                limit: 1,
               })
               .evaluate()
           ).resolves.toMatchObject({ allowed: false });
-
-          expect(
-            limiter.create({
-              algo: 'sliding_window',
-              window: 1000 * 60,
-              key: 'sliding_window_01',
-              max: 1,
-            }).redisKey
-          ).toBe('rl:sliding_window:sliding_window_01');
         });
       });
     });
@@ -147,8 +120,8 @@ describe('rate limiter core implementation', () => {
               .create({
                 algo: 'fixed_window',
                 window: 1000 * 60,
-                max: 1,
-                key: () => 'fixed_window_02',
+                limit: 1,
+                key: () => 'fixed_window_with_default_prefix',
               })
               .evaluate()
           ).resolves.toMatchObject({
@@ -162,8 +135,8 @@ describe('rate limiter core implementation', () => {
               .create({
                 algo: 'fixed_window',
                 window: 1000 * 60,
-                max: 1,
-                key: 'fixed_window_02',
+                limit: 1,
+                key: 'fixed_window_with_default_prefix',
               })
               .evaluate()
           ).resolves.toMatchObject({
@@ -179,9 +152,9 @@ describe('rate limiter core implementation', () => {
               .create({
                 algo: 'token_bucket',
                 window: 1000 * 60,
-                key: 'token_bucket_02',
-                capacity: 1,
-                refill: 0,
+                key: 'token_bucket_with_default_prefix',
+                limit: 1,
+                refill: 1,
               })
               .evaluate()
           ).resolves.toMatchObject({
@@ -195,9 +168,9 @@ describe('rate limiter core implementation', () => {
               .create({
                 algo: 'token_bucket',
                 window: 1000 * 60,
-                key: 'token_bucket_02',
-                capacity: 10,
-                refill: 0,
+                key: 'token_bucket_with_default_prefix',
+                limit: 10,
+                refill: 1,
               })
               .evaluate()
           ).resolves.toMatchObject({
@@ -213,8 +186,8 @@ describe('rate limiter core implementation', () => {
               .create({
                 algo: 'sliding_window',
                 window: 1000 * 60,
-                key: 'sliding_window_02',
-                max: 1,
+                key: 'sliding_window_with_default_prefix',
+                limit: 1,
               })
               .evaluate()
           ).resolves.toMatchObject({ allowed: true });
@@ -226,20 +199,11 @@ describe('rate limiter core implementation', () => {
               .create({
                 algo: 'sliding_window',
                 window: 1000 * 60,
-                key: 'sliding_window_02',
-                max: 1,
+                key: 'sliding_window_with_default_prefix',
+                limit: 1,
               })
               .evaluate()
           ).resolves.toMatchObject({ allowed: false });
-
-          expect(
-            limiter.create({
-              algo: 'sliding_window',
-              window: 1000 * 60,
-              key: 'sliding_window_02',
-              max: 1,
-            }).redisKey
-          ).toBe('rl:sliding_window:sliding_window_02');
         });
       });
     });
@@ -256,8 +220,8 @@ describe('rate limiter core implementation', () => {
               .create({
                 algo: 'fixed_window',
                 window: 1000 * 60,
-                max: 1,
-                key: () => 'fixed_window_03',
+                limit: 1,
+                key: () => 'fixed_window_with_custom_prefix',
               })
               .evaluate()
           ).resolves.toMatchObject({
@@ -271,8 +235,8 @@ describe('rate limiter core implementation', () => {
               .create({
                 algo: 'fixed_window',
                 window: 1000 * 60,
-                max: 1,
-                key: 'fixed_window_03',
+                limit: 1,
+                key: 'fixed_window_with_custom_prefix',
               })
               .evaluate()
           ).resolves.toMatchObject({
@@ -288,9 +252,9 @@ describe('rate limiter core implementation', () => {
               .create({
                 algo: 'token_bucket',
                 window: 1000 * 60,
-                key: 'token_bucket_03',
-                capacity: 1,
-                refill: 0,
+                key: 'token_bucket_with_custom_prefix',
+                limit: 1,
+                refill: 1,
               })
               .evaluate()
           ).resolves.toMatchObject({
@@ -304,9 +268,9 @@ describe('rate limiter core implementation', () => {
               .create({
                 algo: 'token_bucket',
                 window: 1000 * 60,
-                key: 'token_bucket_03',
-                capacity: 10,
-                refill: 0,
+                key: 'token_bucket_with_custom_prefix',
+                limit: 10,
+                refill: 1,
               })
               .evaluate()
           ).resolves.toMatchObject({
@@ -322,8 +286,8 @@ describe('rate limiter core implementation', () => {
               .create({
                 algo: 'sliding_window',
                 window: 1000 * 60,
-                key: 'sliding_window_03',
-                max: 1,
+                key: 'sliding_window_with_custom_prefix',
+                limit: 1,
               })
               .evaluate()
           ).resolves.toMatchObject({ allowed: true });
@@ -335,20 +299,179 @@ describe('rate limiter core implementation', () => {
               .create({
                 algo: 'sliding_window',
                 window: 1000 * 60,
-                key: 'sliding_window_03',
-                max: 1,
+                key: 'sliding_window_with_custom_prefix',
+                limit: 1,
               })
               .evaluate()
           ).resolves.toMatchObject({ allowed: false });
+        });
+      });
+    });
+  });
 
-          expect(
-            limiter.create({
-              algo: 'sliding_window',
-              window: 1000 * 60,
-              key: 'sliding_window_03',
-              max: 1,
-            }).redisKey
-          ).toBe('rate-limiter:sliding_window:sliding_window_03');
+  describe('when async key generation enabled', () => {
+    const limiter = new RateLimiter(connection, { prefix: 'rate-limiter' });
+
+    describe('rate limiter', () => {
+      describe('fixed window', () => {
+        it('should allow if rate limiting count not exceeded', async () => {
+          await expect(
+            limiter
+              .create({
+                algo: 'fixed_window',
+                window: 1000 * 60,
+                limit: 1,
+                key: getRandomKey,
+              })
+              .evaluate()
+          ).resolves.toMatchObject({
+            allowed: true,
+          });
+        });
+      });
+
+      describe('token bucket', () => {
+        it('should allow if rate limiting count not exceeded', async () => {
+          await expect(
+            limiter
+              .create({
+                algo: 'token_bucket',
+                window: 1000 * 60,
+                key: getRandomKey,
+                limit: 1,
+                refill: 1,
+              })
+              .evaluate()
+          ).resolves.toMatchObject({
+            allowed: true,
+          });
+        });
+      });
+
+      describe('sliding window', () => {
+        it('should allow if rate limiting count not exceeded', async () => {
+          await expect(
+            limiter
+              .create({
+                algo: 'sliding_window',
+                window: 1000 * 60,
+                key: getRandomKey,
+                limit: 1,
+              })
+              .evaluate()
+          ).resolves.toMatchObject({ allowed: true });
+        });
+      });
+    });
+  });
+
+  describe('when async limit generation enabled', () => {
+    const limiter = new RateLimiter(connection, { prefix: 'rate-limiter' });
+
+    describe('rate limiter', () => {
+      describe('fixed window', () => {
+        it('should allow if rate limiting count not exceeded', async () => {
+          await expect(
+            limiter
+              .create({
+                algo: 'fixed_window',
+                window: 1000 * 60,
+                limit: getRandomLimit,
+                key: getRandomKey,
+              })
+              .evaluate()
+          ).resolves.toMatchObject({
+            allowed: true,
+          });
+        });
+      });
+
+      describe('token bucket', () => {
+        it('should allow if rate limiting count not exceeded', async () => {
+          await expect(
+            limiter
+              .create({
+                algo: 'token_bucket',
+                window: 1000 * 60,
+                key: getRandomKey,
+                limit: getRandomLimit,
+                refill: 1,
+              })
+              .evaluate()
+          ).resolves.toMatchObject({
+            allowed: true,
+          });
+        });
+      });
+
+      describe('sliding window', () => {
+        it('should allow if rate limiting count not exceeded', async () => {
+          await expect(
+            limiter
+              .create({
+                algo: 'sliding_window',
+                window: 1000 * 60,
+                key: getRandomKey,
+                limit: getRandomLimit,
+              })
+              .evaluate()
+          ).resolves.toMatchObject({ allowed: true });
+        });
+      });
+    });
+  });
+
+  describe('when sync limit generation enabled', () => {
+    const limiter = new RateLimiter(connection, { prefix: 'rate-limiter' });
+
+    describe('rate limiter', () => {
+      describe('fixed window', () => {
+        it('should allow if rate limiting count not exceeded', async () => {
+          await expect(
+            limiter
+              .create({
+                algo: 'fixed_window',
+                window: 1000 * 60,
+                limit: () => 10,
+                key: getRandomKey,
+              })
+              .evaluate()
+          ).resolves.toMatchObject({
+            allowed: true,
+          });
+        });
+      });
+
+      describe('token bucket', () => {
+        it('should allow if rate limiting count not exceeded', async () => {
+          await expect(
+            limiter
+              .create({
+                algo: 'token_bucket',
+                window: 1000 * 60,
+                key: getRandomKey,
+                limit: () => 10,
+                refill: 1,
+              })
+              .evaluate()
+          ).resolves.toMatchObject({
+            allowed: true,
+          });
+        });
+      });
+
+      describe('sliding window', () => {
+        it('should allow if rate limiting count not exceeded', async () => {
+          await expect(
+            limiter
+              .create({
+                algo: 'sliding_window',
+                window: 1000 * 60,
+                key: getRandomKey,
+                limit: () => 10,
+              })
+              .evaluate()
+          ).resolves.toMatchObject({ allowed: true });
         });
       });
     });

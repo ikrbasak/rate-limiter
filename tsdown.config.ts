@@ -5,7 +5,7 @@ export default defineConfig({
   outDir: 'dist/',
   format: ['cjs', 'esm'],
   dts: true,
-  sourcemap: 'inline',
+  sourcemap: true,
   platform: 'node',
   minify: true,
   unbundle: true,

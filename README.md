@@ -8,6 +8,7 @@ A flexible, Redis-backed rate limiter for Node.js applications supporting multip
 - 🔄 **Redis-backed**: Distributed rate limiting across multiple instances
 - 📝 **TypeScript Support**: Full type safety with comprehensive JSDoc documentation
 - ⚡ **High Performance**: Optimized Redis operations with pipelining
+- 🎯 **Dynamic Configuration**: Support for dynamic keys and limits using sync/async functions
 - 🛡️ **Production Ready**: Battle-tested algorithms with proper error handling
 
 ## Installation
@@ -35,7 +36,7 @@ const redis = new Redis('redis://localhost:6379');
 
 // Create rate limiter instance
 const rateLimiter = new RateLimiter(redis, {
-  prefix: 'api', // Optional: custom Redis key prefix, default to 'rl'
+  prefix: 'api', // Optional: custom Redis key prefix, defaults to 'rl'
 });
 
 // Create a rate limiter
@@ -43,7 +44,7 @@ const limiter = rateLimiter.create({
   algo: 'fixed_window',
   key: 'user:123',
   window: 60000, // 1 minute in milliseconds
-  max: 100, // 100 requests per minute
+  limit: 100, // 100 requests per minute
 });
 
 // Check rate limit
@@ -69,7 +70,7 @@ const limiter = rateLimiter.create({
   algo: 'fixed_window',
   key: 'api:user:123',
   window: 60000, // 1 minute window
-  max: 100, // 100 requests per window
+  limit: 100, // 100 requests per window
 });
 ```
 
@@ -92,7 +93,7 @@ const limiter = rateLimiter.create({
   algo: 'sliding_window',
   key: 'api:user:123',
   window: 60000, // 1 minute sliding window
-  max: 100, // 100 requests per minute
+  limit: 100, // 100 requests per minute
 });
 ```
 
@@ -115,7 +116,7 @@ const limiter = rateLimiter.create({
   algo: 'token_bucket',
   key: 'api:user:123',
   window: 3600000, // 1 hour token bucket lifetime
-  capacity: 1000, // Maximum 1000 tokens
+  limit: 1000, // Maximum 1000 tokens
   refill: 10, // 10 tokens per second
 });
 ```
@@ -136,8 +137,9 @@ const limiter = rateLimiter.create({
 
 ```typescript
 type CommonRateLimiterOptions = {
-  key: string | (() => string); // Unique identifier
+  key: string | ValueGenerator<string>; // Static string or function that returns string
   window: number; // Time window in milliseconds (positive integer)
+  limit: number | ValueGenerator<number>; // Static number or function that returns number
 };
 ```
 
@@ -148,7 +150,8 @@ type CommonRateLimiterOptions = {
 ```typescript
 {
   algo: 'fixed_window' | 'sliding_window',
-  max: number // Maximum requests (positive integer)
+  key: string | (() => string) | (() => Promise<string>),
+  limit: number | (() => number) | (() => Promise<number>)
 }
 ```
 
@@ -157,7 +160,8 @@ type CommonRateLimiterOptions = {
 ```typescript
 {
   algo: 'token_bucket',
-  capacity: number, // Maximum tokens (positive integer)
+  key: string | (() => string) | (() => Promise<string>),
+  limit: number | (() => number) | (() => Promise<number>), // Maximum tokens
   refill: number // Refill rate per second (positive number)
 }
 ```
@@ -169,11 +173,53 @@ type CommonRateLimiterOptions = {
 Use functions for dynamic rate limiting:
 
 ```typescript
+// Synchronous key generation
 const limiter = rateLimiter.create({
   algo: 'sliding_window',
   key: () => `user:${getCurrentUserId()}:${getClientIP()}`,
   window: 60000,
-  max: 50,
+  limit: 50,
+});
+
+// Asynchronous key generation
+const asyncLimiter = rateLimiter.create({
+  algo: 'token_bucket',
+  key: async (id: number) => {
+    const userId = await getUserId(id);
+    const tier = await getUserTier(userId);
+    return `${tier}:${userId}`;
+  },
+  window: 3600000,
+  limit: 1000,
+  refill: 1,
+});
+```
+
+### Dynamic Limits
+
+Adjust limits based on user tiers, time of day, or other factors:
+
+```typescript
+// Synchronous limit generation
+const limiter = rateLimiter.create({
+  algo: 'fixed_window',
+  key: 'api:user:123',
+  window: 60000,
+  limit: () => {
+    const hour = new Date().getHours();
+    return hour >= 9 && hour <= 17 ? 1000 : 100; // Higher limits during business hours
+  },
+});
+
+// Asynchronous limit generation
+const premiumLimiter = rateLimiter.create({
+  algo: 'sliding_window',
+  key: 'api:user:123',
+  window: 60000,
+  limit: async () => {
+    const user = await getUserById(123);
+    return user.tier === 'premium' ? 1000 : 100;
+  },
 });
 ```
 
@@ -187,7 +233,7 @@ const burstLimiter = rateLimiter.create({
   algo: 'fixed_window',
   key: 'api:user:123',
   window: 1000, // 1 second
-  max: 10,
+  limit: 10,
 });
 
 // Sustained usage (long-term)
@@ -195,7 +241,7 @@ const sustainedLimiter = rateLimiter.create({
   algo: 'sliding_window',
   key: 'api:user:123',
   window: 3600000, // 1 hour
-  max: 1000,
+  limit: 1000,
 });
 
 // Check both limits
@@ -207,123 +253,16 @@ const [burstResult, sustainedResult] = await Promise.all([
 const allowed = burstResult.allowed && sustainedResult.allowed;
 ```
 
-### Express.js Middleware
-
-```typescript
-import express from 'express';
-
-function createRateLimitMiddleware(limiterOptions: RateLimiterOptions) {
-  return async (
-    req: express.Request,
-    res: express.Response,
-    next: express.NextFunction
-  ) => {
-    const limiter = rateLimiter.create({
-      ...limiterOptions,
-      key: req.ip || 'anonymous',
-    });
-
-    try {
-      const result = await limiter.evaluate();
-
-      // Add rate limit headers
-      res.set({
-        'X-RateLimit-Limit': result.limit.toString(),
-        'X-RateLimit-Remaining': result.remaining.toString(),
-        'X-RateLimit-Reset': new Date(
-          Date.now() + result.retryAfter * 1000
-        ).toISOString(),
-      });
-
-      if (!result.allowed) {
-        return res.status(429).json({
-          error: 'Too Many Requests',
-          retryAfter: result.retryAfter,
-        });
-      }
-
-      next();
-    } catch (error) {
-      console.error('Rate limiter error:', error);
-      next(); // Fail open - allow request if rate limiter fails
-    }
-  };
-}
-
-// Usage
-const app = express();
-app.use(
-  '/api',
-  createRateLimitMiddleware({
-    algo: 'sliding_window',
-    window: 60000,
-    max: 100,
-  })
-);
-```
-
-### Next.js API Route
-
-```typescript
-// pages/api/example.ts or app/api/example/route.ts
-import type { NextApiRequest, NextApiResponse } from 'next';
-
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  const limiter = rateLimiter.create({
-    algo: 'fixed_window',
-    key:
-      (req.headers['x-forwarded-for'] as string) ||
-      req.connection.remoteAddress ||
-      'anonymous',
-    window: 60000,
-    max: 10,
-  });
-
-  const result = await limiter.evaluate();
-
-  if (!result.allowed) {
-    return res.status(429).json({
-      error: 'Rate limit exceeded',
-      retryAfter: result.retryAfter,
-    });
-  }
-
-  // Process request
-  res.json({ message: 'Success', remaining: result.remaining });
-}
-```
-
 ## Response Format
 
 The `evaluate()` method returns a `RateLimiterEvaluationResult`:
 
 ```typescript
 {
-  limit: number; // Configured limit (positive integer)
+  limit: number; // Applied limit (positive integer)
   allowed: boolean; // Whether request is allowed
   remaining: number; // Requests remaining (non-negative integer)
   retryAfter: number; // Seconds to wait before retry (0 if allowed)
-}
-```
-
-## Error Handling
-
-```typescript
-try {
-  const result = await limiter.evaluate();
-  // Handle result
-} catch (error) {
-  console.error('Rate limiter error:', error);
-  // Implement fallback strategy (fail open/closed)
-
-  // Fail open (allow request)
-  return { allowed: true, remaining: 0, retryAfter: 0, limit: 0 };
-
-  // Or fail closed (deny request)
-  // return { allowed: false, remaining: 0, retryAfter: 60, limit: 0 };
 }
 ```
 
@@ -331,18 +270,19 @@ try {
 
 ### 1. Choose the Right Algorithm
 
-- **Fixed Window**: Simple APIs, basic protection
-- **Sliding Window**: Accurate limiting, prevent bursts
-- **Token Bucket**: Allow legitimate bursts, credit systems
+- **Fixed Window**: Simple APIs, basic protection, memory efficient
+- **Sliding Window**: Accurate limiting, prevent bursts, fair usage
+- **Token Bucket**: Allow legitimate bursts, credit systems, flexible limits
 
 ### 2. Key Design
 
 ```typescript
-// Good: Specific and meaningful
-key: `api:${endpoint}:user:${userId}`;
-key: `download:${fileId}:ip:${clientIP}`;
+// Good: Specific and meaningful keys
+key: () => `api:${endpoint}:user:${userId}`;
+key: () => `download:${fileId}:ip:${clientIP}`;
+key: async (id: number) => `tier:${await getUserTier(number)}:${userId}`;
 
-// Avoid: Too generic
+// Avoid: Too generic or static when dynamic is needed
 key: 'user';
 key: 'api';
 ```
@@ -351,9 +291,9 @@ key: 'api';
 
 ```typescript
 // Multiple time windows for different scenarios
-const shortTerm = { window: 1000, max: 5 }; // Burst protection
-const mediumTerm = { window: 60000, max: 100 }; // Per-minute limits
-const longTerm = { window: 3600000, max: 1000 }; // Hourly quotas
+const shortTerm = { window: 1000, limit: 5 }; // Burst protection
+const mediumTerm = { window: 60000, limit: 100 }; // Per-minute limits
+const longTerm = { window: 3600000, limit: 1000 }; // Hourly quotas
 ```
 
 ## Redis Configuration
@@ -373,6 +313,33 @@ timeout 300
 - **Key Expiration**: All keys are automatically set to expire to prevent memory leaks
 - **Pipeline Operations**: The library uses Redis transactions for atomic operations
 - **Memory Usage**: Sliding window uses more memory than fixed window due to timestamp storage
+- **Dynamic Function Caching**: Cache results of expensive async operations when possible
+
+## TypeScript Support
+
+The library is written in TypeScript and provides full type safety:
+
+```typescript
+import RateLimiter, {
+  RateLimiterOptions,
+  RateLimiterEvaluationResult,
+  ValueGenerator,
+  FixedWindowRateLimiterOptions,
+  SlidingWindowRateLimiterOptions,
+  TokenBucketRateLimiterOptions,
+} from '@ikrbasak/rate-limiter';
+
+// Type-safe configuration
+const options: FixedWindowRateLimiterOptions = {
+  algo: 'fixed_window',
+  key: 'user:123',
+  window: 60000,
+  limit: 100,
+};
+
+// Type-safe result handling
+const result: RateLimiterEvaluationResult = await limiter.evaluate();
+```
 
 ## Contributing
 
@@ -392,4 +359,4 @@ MIT License. See [LICENSE](LICENSE) file for details.
 
 ---
 
-**Keywords:** rate limiting, Redis, TypeScript, Node.js, API, throttling, token bucket, sliding window, fixed window
+**Keywords:** rate limiting, Redis, TypeScript, Node.js, API, throttling, token bucket, sliding window, fixed window, dynamic configuration

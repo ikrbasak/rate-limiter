@@ -1,5 +1,11 @@
 # @ikrbasak/rate-limiter
 
+## 0.2.1
+
+### Patch Changes
+
+- 03393d4: Update the documentation to reflect proper changes.
+
 ## 0.2.0
 
 ### Minor Changes

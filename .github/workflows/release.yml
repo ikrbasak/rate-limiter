@@ -113,7 +113,7 @@ jobs:
           # Apply version updates
           npx changeset version
           next_package_version=$(jq -r '.version' package.json)
-          npm version "$next_package_version" --no-git-tag-version --no-commit-hooks
+          npm version "$next_package_version" --no-git-tag-version --no-commit-hooks --allow-same-version
 
           echo "next_package_version=$next_package_version" >> $GITHUB_OUTPUT
           echo "package_name=$package_name" >> $GITHUB_OUTPUT

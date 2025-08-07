@@ -143,7 +143,7 @@ class RateLimiter {
    */
   create(options: RateLimiterOptions) {
     const redisKey = this.generateKey(options.algo, options.key);
-    return { evaluate: () => this.evaluate(options), redisKey };
+    return { evaluate: () => this.evaluate(redisKey, options), redisKey };
   }
 
   /**
@@ -162,24 +162,25 @@ class RateLimiter {
    * Evaluates whether a request should be allowed based on the rate limit configuration
    *
    * @private
+   * @param key - Identifier for the rate limit bucket (string or function returning string)
    * @param options - Rate limiter configuration options
    * @returns Promise resolving to the evaluation result
    */
   private evaluate(
+    key: string,
     options: RateLimiterOptions
   ): Promise<RateLimiterEvaluationResult> {
-    const { algo, key } = options;
-    const redisKey = this.generateKey(algo, key);
+    const { algo } = options;
 
     switch (algo) {
       case 'token_bucket': {
-        return this.evaluateTokenBucketLimit(redisKey, options);
+        return this.evaluateTokenBucketLimit(key, options);
       }
       case 'sliding_window': {
-        return this.evaluateSlidingWindowLimit(redisKey, options);
+        return this.evaluateSlidingWindowLimit(key, options);
       }
       case 'fixed_window': {
-        return this.evaluateFixedWindowLimit(redisKey, options);
+        return this.evaluateFixedWindowLimit(key, options);
       }
     }
   }

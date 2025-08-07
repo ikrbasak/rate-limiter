@@ -1,5 +1,11 @@
 # @ikrbasak/rate-limiter
 
+## 0.1.2
+
+### Patch Changes
+
+- 6e4ef79: Unified redis key generation for storing rate limiter data, and remove unnecessary re-calculation of the key.
+
 ## 0.1.1
 
 ### Patch Changes
